@@ -36,6 +36,7 @@ class GlobalData:
     card_match_re: Pattern[str] = re.compile(r"^card\d+$")
     disp_match_re: Pattern[str] = re.compile(r"^card\d+-.*$")
     whitespace_start_re: Pattern[str] = re.compile(r"^\s+")
+    enabled_re: Pattern[str] = re.compile(r"\s+Enabled:")
     modes_re: Pattern[str] = re.compile(r"\s+Modes:$")
     current_mode_re: Pattern[str] = re.compile(r".*[( ]current[,)].*")
     virtualizer_str: str | None = ""
@@ -118,9 +119,10 @@ def get_udev_card_event(udev_mon: pyudev.Monitor) -> str:
 # pylint: disable=too-many-branches
 def get_compositor_disp_list() -> list[DisplayInfo] | None:
     """
-    Gets all displays that the compositor currently sees, along with their
-    current resolution.
+    Gets all enabled displays that the compositor currently sees, along with
+    their current resolution.
     """
+
     try:
         wlr_randr_env: dict[str, str] = os.environ.copy()
         wlr_randr_env["LC_ALL"] = "C"
@@ -148,6 +150,7 @@ def get_compositor_disp_list() -> list[DisplayInfo] | None:
     disp_name: str | None = None
     disp_mode: str | None = None
     in_modes_zone: bool = False
+    display_enabled: bool = True
     modes_zone_indent: int = 0
 
     for idx, line in enumerate(wlr_randr_lines):
@@ -164,18 +167,29 @@ def get_compositor_disp_list() -> list[DisplayInfo] | None:
             continue
 
         if not GlobalData.whitespace_start_re.match(line):
-            if disp_name is None or disp_mode is None:
-                print(
-                    "ERROR: Unable to find active display mode for "
-                    "a screen in wlr-randr output! wlr-randr output:",
-                    file=sys.stderr,
-                )
-                print("\n".join(wlr_randr_lines), file=sys.stderr)
-                sys.exit(1)
-            out_list.append(DisplayInfo(disp_name, disp_mode))
+            if display_enabled:
+                if disp_name is None or disp_mode is None:
+                    print(
+                        "ERROR: Unable to find active display mode for "
+                        "a screen in wlr-randr output! wlr-randr output:",
+                        file=sys.stderr,
+                    )
+                    print("\n".join(wlr_randr_lines), file=sys.stderr)
+                    sys.exit(1)
+                out_list.append(DisplayInfo(disp_name, disp_mode))
             disp_name = line.split(" ")[0]
             disp_mode = None
             in_modes_zone = False
+            display_enabled = True
+            continue
+
+        if GlobalData.enabled_re.match(line):
+            enabled_parts: list[str] = line.split(":")
+            if len(enabled_parts) < 2:
+                continue
+            enabled_status: str = enabled_parts[1].strip()
+            if enabled_status == "no":
+                display_enabled = False
             continue
 
         if GlobalData.modes_re.match(line):
