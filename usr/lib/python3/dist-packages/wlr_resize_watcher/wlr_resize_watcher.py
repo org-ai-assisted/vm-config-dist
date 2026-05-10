@@ -226,6 +226,8 @@ def get_compositor_disp_list() -> list[DisplayInfo] | None:
         if GlobalData.current_mode_re.match(line_parts[4]):
             disp_mode = line_parts[0]
 
+    if len(out_list) == 0:
+        return None
     return out_list
 
 
