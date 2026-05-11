@@ -1,3 +1,41 @@
+commit d025bce4de9ab58fcf147dd45b081647f9586c74
+Merge: c13c326 c137e4c
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Sun May 10 14:03:18 2026 -0400
+
+    Merge remote-tracking branch 'ArrayBolt3/arraybolt3/trixie'
+
+commit c137e4cf39df58b01c13101fde6f66b053198268
+Author: Aaron Rainbolt <arraybolt3@gmail.com>
+Date:   Sun May 10 13:11:49 2026 -0400
+
+    minor
+
+commit c13c326335c71e1f0f3b964af871e91bb7913a6c
+Merge: c22be87 892049a
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Sun May 10 13:08:02 2026 -0400
+
+    Merge remote-tracking branch 'refs/remotes/ArrayBolt3/arraybolt3/trixie'
+
+commit 892049aeec6300cc6a109ee69ab3e72b696f5b43
+Author: Aaron Rainbolt <arraybolt3@gmail.com>
+Date:   Fri May 1 00:09:02 2026 -0400
+
+    Properly handle disabled displays in wlr-resize-watcher
+
+commit 87294eea7d61a5d27ed7db9d9d83062707814797
+Author: Aaron Rainbolt <arraybolt3@gmail.com>
+Date:   Thu Apr 30 22:55:02 2026 -0400
+
+    Fix wlr-randr env and remove some unnecessary fstrings (taken from Claude Code)
+
+commit c22be879a63aaf4cb6fedb4fb2b2c0f4c832a962
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Thu Apr 16 12:31:10 2026 +0000
+
+    bumped changelog version
+
 commit 6329f344e58debb66895a23248e18c738edf1b4a
 Merge: 731c2d0 4769730
 Author: Patrick Schleizer <adrelanos@whonix.org>
