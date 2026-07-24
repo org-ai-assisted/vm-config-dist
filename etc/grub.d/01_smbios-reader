@@ -31,9 +31,19 @@ shopt -s shift_verbose
 ##
 ## The heredoc is single-quoted so the shell writes ${dm_smbios_oem} literally for
 ## GRUB to expand at boot.
+## When a boot-tester injected a cmdline via SMBIOS (dm_smbios_extra non-empty),
+## drive the serial console and boot the default entry immediately (timeout=0):
+## the tester drives the guest over the serial ROOT shell and cannot interact with
+## the GRUB menu, so a menu wait hangs the headless boot. A normal boot (no
+## injection) is unaffected -- dm_smbios_extra is empty and the block is skipped.
 cat <<'EOF'
 insmod regexp
 insmod smbios
 smbios --type 1 --get-string 7 --set dm_smbios_oem
 regexp --set 1:dm_smbios_extra "^dm-cmdline=(.*)" "${dm_smbios_oem}"
+if [ -n "${dm_smbios_extra}" ]; then
+    serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1
+    terminal_output serial console
+    set timeout=0
+fi
 EOF
