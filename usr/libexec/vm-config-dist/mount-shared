@@ -7,6 +7,8 @@ set -o errexit
 set -o nounset
 set -o errtrace
 set -o pipefail
+shopt -s inherit_errexit
+shopt -s shift_verbose
 
 source /usr/libexec/helper-scripts/as_root.sh
 
@@ -17,8 +19,12 @@ main() {
 
   virt_type="${1:-}"
   case "${virt_type}" in
-    kvm) shared_folder_group='kvmsf';;
-    vbox) shared_folder_group='vboxsf';;
+    kvm)
+      shared_folder_group='kvmsf'
+      ;;
+    vbox)
+      shared_folder_group='vboxsf'
+      ;;
     *)
       printf '%s\n' "ERROR: Unknown virtualization type '${virt_type}'!"
       exit 1
@@ -48,13 +54,17 @@ main() {
       ## Try virtiofs first, it works much better and is now recommended.
       ## If that fails, fall back to 9pfs.
       ## 9pfs does not respect uid, gid, or umask parameters. virtiofs should not be used with any of these parameters.
-      mount -t virtiofs shared /mnt/shared \
-        || mount -t 9p -o trans=virtio shared /mnt/shared -oversion=9p2000.L || true
+      ## A failed mount is normal when no shared folder is configured. Suppress the
+      ## "wrong fs type, bad superblock" stderr so it does not pollute the journal;
+      ## systemcheck's check_journal would otherwise flag this benign boot noise.
+      mount -t virtiofs shared /mnt/shared 2>/dev/null \
+        || mount -t 9p -o trans=virtio shared /mnt/shared -oversion=9p2000.L 2>/dev/null || true
       ;;
     vbox)
       cp --no-clobber -- /usr/share/doc/vm-config-dist/shared-folder-vbox-README.md /mnt/shared/README.md || true
       target_group_id="$(accountctl vboxsf get-entry group gid)"
-      mount -t vboxsf -o uid=0,gid="${target_group_id}",umask=0007 shared /mnt/shared || true
+      ## Benign when no shared folder is set up; suppress the failure stderr (see kvm case).
+      mount -t vboxsf -o uid=0,gid="${target_group_id}",umask=0007 shared /mnt/shared 2>/dev/null || true
       ;;
   esac
 }
