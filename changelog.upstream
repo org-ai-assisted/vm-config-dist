@@ -1,3 +1,22 @@
+commit 1c140783056eb2f478c0d1a71dd9785fa9abc3c0
+Merge: fcc5301 5be2567
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Wed Jul 29 08:06:30 2026 -0400
+
+    Merge remote-tracking branch 'refs/remotes/ArrayBolt3/arraybolt3/trixie'
+
+commit 5be256724672e3fd75fd84a533b8dfa0d39e0bad
+Author: Aaron Rainbolt <arraybolt3@gmail.com>
+Date:   Wed Jul 29 01:02:07 2026 -0400
+
+    Allow package updates to trigger a vbox-guest-installer run
+
+commit fcc53012a45391c984623b0f287c60254c5ba3a5
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Tue Jul 21 11:27:07 2026 +0000
+
+    bumped changelog version
+
 commit a87513bed922b051bf354e3c25b369dc9164078f
 Merge: 41399ac f4e0f1d
 Author: Patrick Schleizer <adrelanos@whonix.org>
