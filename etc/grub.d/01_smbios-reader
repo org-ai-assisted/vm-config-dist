@@ -39,6 +39,12 @@ shopt -s shift_verbose
 cat <<'EOF'
 insmod regexp
 insmod smbios
+insmod serial
+## Cleared first: 'smbios' and 'regexp' leave these untouched when they find no
+## match, and GRUB variables survive from grub.cfg's earlier 'load_env'. A value
+## left in grubenv would otherwise make an ordinary boot take the tester path.
+set dm_smbios_oem=
+set dm_smbios_extra=
 smbios --type 1 --get-string 7 --set dm_smbios_oem
 regexp --set 1:dm_smbios_extra "^dm-cmdline=(.*)" "${dm_smbios_oem}"
 if [ -n "${dm_smbios_extra}" ]; then
