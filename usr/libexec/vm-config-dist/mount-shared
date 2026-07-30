@@ -48,13 +48,18 @@ main() {
       ## Try virtiofs first, it works much better and is now recommended.
       ## If that fails, fall back to 9pfs.
       ## 9pfs does not respect uid, gid, or umask parameters. virtiofs should not be used with any of these parameters.
-      mount -t virtiofs shared /mnt/shared \
-        || mount -t 9p -o trans=virtio shared /mnt/shared -oversion=9p2000.L || true
+      ## A failed mount is normal when no shared folder is configured, and the
+      ## '|| true' below already tolerates it. Without silencing stderr, mount's
+      ## "wrong fs type, bad superblock" still lands in the journal, where
+      ## systemcheck's check_journal reports it as a boot error.
+      mount -t virtiofs shared /mnt/shared 2>/dev/null \
+        || mount -t 9p -o trans=virtio shared /mnt/shared -oversion=9p2000.L 2>/dev/null || true
       ;;
     vbox)
       cp --no-clobber -- /usr/share/doc/vm-config-dist/shared-folder-vbox-README.md /mnt/shared/README.md || true
       target_group_id="$(accountctl vboxsf get-entry group gid)"
-      mount -t vboxsf -o uid=0,gid="${target_group_id}",umask=0007 shared /mnt/shared || true
+      ## Benign when no shared folder is set up; silence it for the same reason.
+      mount -t vboxsf -o uid=0,gid="${target_group_id}",umask=0007 shared /mnt/shared 2>/dev/null || true
       ;;
   esac
 }
