@@ -45,6 +45,13 @@ shopt -s shift_verbose
 ## and never takes serial input. Keeping 'console' leaves video output working if
 ## serial init fails, and the EFI mirroring that file warns about would garble the
 ## harness log LOUDLY rather than silently.
+##
+## terminal_INPUT is left alone on purpose. serial-console-enable ships
+## GRUB_TERMINAL="serial", which 00_header turns into 'terminal_input serial'
+## before this '01_' snippet runs, so GRUB reads the same line the harness writes
+## to. What makes that harmless is 'set timeout=0' below: with no menu countdown
+## there is nothing for stray serial input to interrupt. Restoring a menu wait
+## here without also pinning terminal_input would reintroduce the hang.
 cat <<'EOF'
 insmod regexp
 insmod smbios
