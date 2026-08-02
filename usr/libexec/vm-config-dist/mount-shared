@@ -7,6 +7,8 @@ set -o errexit
 set -o nounset
 set -o errtrace
 set -o pipefail
+shopt -s inherit_errexit
+shopt -s shift_verbose
 
 source /usr/libexec/helper-scripts/as_root.sh
 
@@ -14,11 +16,16 @@ shared_folder_users=( 'user' 'sysmaint' )
 
 main() {
   local virt_type shared_folder_group account_name target_group_id
+  local virtiofs_error ninep_error
 
   virt_type="${1:-}"
   case "${virt_type}" in
-    kvm) shared_folder_group='kvmsf';;
-    vbox) shared_folder_group='vboxsf';;
+    kvm)
+      shared_folder_group='kvmsf'
+      ;;
+    vbox)
+      shared_folder_group='vboxsf'
+      ;;
     *)
       printf '%s\n' "ERROR: Unknown virtualization type '${virt_type}'!"
       exit 1
@@ -48,8 +55,29 @@ main() {
       ## Try virtiofs first, it works much better and is now recommended.
       ## If that fails, fall back to 9pfs.
       ## 9pfs does not respect uid, gid, or umask parameters. virtiofs should not be used with any of these parameters.
-      mount -t virtiofs shared /mnt/shared \
-        || mount -t 9p -o trans=virtio shared /mnt/shared -oversion=9p2000.L || true
+      ## A missing shared folder is the NORMAL case: this unit is gated on the
+      ## hypervisor (ConditionVirtualization=|qemu|kvm), not on whether the host
+      ## actually exported a share, so it runs on every plain QEMU/KVM guest.
+      ##
+      ## The '|| true' already made that non-fatal, but mount still wrote its
+      ## error to stderr, so every such boot logged
+      ##   mount: /mnt/shared: wrong fs type, bad option, bad superblock ...
+      ## which systemcheck's journal check then reports as a WARNING. The mount
+      ## was fine; the NOISE was the defect.
+      ##
+      ## Capture both attempts and report the outcome honestly: silence when a
+      ## share was mounted, one INFO line when none was exported, and the real
+      ## error preserved so a share that exists but is genuinely broken is still
+      ## diagnosable.
+      if ! virtiofs_error="$(mount -t virtiofs shared /mnt/shared 2>&1)"; then
+        if ! ninep_error="$(mount -t 9p -o trans=virtio shared /mnt/shared -oversion=9p2000.L 2>&1)"; then
+          printf '%s\n' \
+            "INFO: no shared folder exported by the hypervisor; /mnt/shared left unmounted." \
+            "INFO: this is expected unless a share named 'shared' was configured on the host." \
+            "INFO: virtiofs: ${virtiofs_error}" \
+            "INFO: 9p: ${ninep_error}"
+        fi
+      fi
       ;;
     vbox)
       cp --no-clobber -- /usr/share/doc/vm-config-dist/shared-folder-vbox-README.md /mnt/shared/README.md || true
