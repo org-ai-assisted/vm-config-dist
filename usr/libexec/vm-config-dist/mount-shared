@@ -71,11 +71,19 @@ main() {
       ## diagnosable.
       if ! virtiofs_error="$(mount -t virtiofs shared /mnt/shared 2>&1)"; then
         if ! ninep_error="$(mount -t 9p -o trans=virtio shared /mnt/shared -oversion=9p2000.L 2>&1)"; then
+          ## State what was OBSERVED, not a cause. Two failed mounts do not prove
+          ## the host exported nothing: the unit is gated on the hypervisor, not
+          ## on share configuration, so an exported-but-broken share reaches here
+          ## too. Naming the wrong cause would send a reader down the wrong path.
           printf '%s\n' \
-            "INFO: no shared folder exported by the hypervisor; /mnt/shared left unmounted." \
-            "INFO: this is expected unless a share named 'shared' was configured on the host." \
-            "INFO: virtiofs: ${virtiofs_error}" \
-            "INFO: 9p: ${ninep_error}"
+            "INFO: could not mount /mnt/shared; leaving it unmounted." \
+            "INFO: expected when no share named 'shared' is configured on the host; the attempts follow."
+          ## Prefix EVERY line. mount emits multiline diagnostics (a bare
+          ## "dmesg(1) may have more information ..." continuation is routine), and
+          ## an unlabelled continuation is exactly the loose journal line this
+          ## change exists to stop producing.
+          printf '%s\n' "${virtiofs_error}" | sed -e 's/^/INFO: virtiofs: /'
+          printf '%s\n' "${ninep_error}" | sed -e 's/^/INFO: 9p: /'
         fi
       fi
       ;;
