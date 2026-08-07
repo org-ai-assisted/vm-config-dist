@@ -1,3 +1,148 @@
+commit 1db38c8c5b9ae267800c430dc899eff4bda8efa8
+Merge: 4694bfb 7a022ad
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Sat Aug 1 04:33:10 2026 -0400
+
+    Merge remote-tracking branch 'refs/remotes/org-ai-assisted/master'
+
+commit 7a022ad13a03cd08f840b341c5e122e31d51f3d7
+Merge: 4694bfb 02db0fb
+Author: assisted-by-ai (Bot Account) (Machine Account) <228987186+assisted-by-ai@users.noreply.github.com>
+Date:   Fri Jul 31 15:51:53 2026 -0400
+
+    Merge pull request #6 from org-ai-assisted/ai
+
+    01_smbios-reader: drive serial and boot immediately under SMBIOS injection
+
+commit 02db0fbc17f462fd9727b7c21fb7a7ab7c24a55e
+Author: claude (dev142 b93fb2c6-e15f-4d45-8566-f3ded893b70e) <noreply@anthropic.com>
+Date:   Fri Jul 31 15:07:20 2026 -0400
+
+    ci: add file-based CodeQL python lane
+
+    Propagate consumer-codeql-python.yml byte-identically from
+    developer-meta-files/consumer-templates. vm-config-dist ships real
+    product Python (wlr resize watcher) that had no python CodeQL analysis.
+
+    build-mode none; push/PR/workflow_dispatch triggers. No dm-consumer.yml
+    section required (reusable soft-skips an absent section).
+
+    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+
+commit 24b1b101fce4a288e642ae22a38da19aa2bbccd2
+Author: claude (dev130 fb69d4e9-4716-4e71-ba8c-c9a310d51a5f) <noreply@anthropic.com>
+Date:   Thu Jul 30 20:09:35 2026 -0400
+
+    01_smbios-reader: record why terminal_input is left on serial
+
+    - serial-console-enable ships GRUB_TERMINAL="serial", so 00_header emits
+      `terminal_input serial` before this `01_` snippet runs.
+    - `set timeout=0` is what makes that harmless: no countdown, so stray serial
+      input has nothing to interrupt. Restoring a menu wait without pinning
+      terminal_input would reintroduce the hang.
+    - Comment only; emitted GRUB block unchanged (parity test 17/17).
+
+commit 24fc31e9e0f16239b28280de7ee71118c01aee56
+Author: claude (dev130 fb69d4e9-4716-4e71-ba8c-c9a310d51a5f) <noreply@anthropic.com>
+Date:   Thu Jul 30 19:35:01 2026 -0400
+
+    01_smbios-reader: record why 'console' stays next to 'serial'
+
+    - serial-console-enable's 30_serial_console.cfg argues against pairing
+      them; that file sets GRUB_TERMINAL (input AND output, every boot, real
+      hardware), where duplicated output and a serial-input menu hijack matter.
+    - This sets OUTPUT only, on the injection-only test path, and never takes
+      serial input.
+    - 'console' keeps video output alive if serial init fails; the EFI
+      mirroring warned about would garble the harness log loudly, not silently.
+    - Comment only; the emitted GRUB block is unchanged (parity test 17/17).
+
+commit a3adbc3b8eb3daf26556bbe028a4c31c52902e4e
+Author: claude (dev130 fb69d4e9-4716-4e71-ba8c-c9a310d51a5f) <noreply@anthropic.com>
+Date:   Thu Jul 30 19:10:01 2026 -0400
+
+    99_smbios-cmdline: put the placeholder last, guard for nounset
+
+    grub-mkconfig emits "${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT}" and the
+    kernel takes the last occurrence of a parameter. From GRUB_CMDLINE_LINUX the
+    placeholder was followed by the image's own tail, measured in a real build as:
+
+      ... ${dm_smbios_extra} boot-role=sysmaint ...  loglevel=0 quiet rd.emergency=halt
+
+    so an injected parameter the image also sets was silently defeated -- dm-image-test
+    injects 'loglevel=3' and never got it, on both the disk and the ISO. Injection is
+    supposed to win.
+
+    Appending to GRUB_CMDLINE_LINUX_DEFAULT puts the placeholder after everything
+    grub-mkconfig emits, including the sysmaint menuentry's own boot-role parameters, so
+    the tester's session selection wins too. Recovery entries drop
+    GRUB_CMDLINE_LINUX_DEFAULT and are therefore not injectable, which is correct: the
+    tester boots default entries.
+
+    Also carries the "cope up with set -o nounset" guard its neighbour
+    serial-console-enable etc/default/grub.d/30_serial_console.cfg documents and this
+    file lacked, and drops the header's claim that the placeholder reaches EVERY
+    generated command line.
+
+    Covered by dist-ai dm-grub-smbios-tests, canary-checked both ways.
+
+commit ef9606d97171be7a88ae2cfdef0ee5ee2167ecaa
+Author: claude (dev130 fb69d4e9-4716-4e71-ba8c-c9a310d51a5f) <noreply@anthropic.com>
+Date:   Thu Jul 30 17:40:47 2026 -0400
+
+    01_smbios-reader: load serial, clear the SMBIOS variables first
+
+    Two findings from the ai-review pass.
+
+    insmod serial: the snippet loads regexp and smbios but called 'serial' without
+    loading it. It resolves today because the grub image already carries the module,
+    which is luck rather than a guarantee.
+
+    Clear dm_smbios_oem and dm_smbios_extra before use: 'smbios' and 'regexp' leave
+    them untouched when they find no match, and GRUB variables survive grub.cfg's
+    earlier load_env. A value sitting in grubenv would make an ordinary boot take the
+    tester path -- serial output and timeout=0 -- with no SMBIOS injection present.
+    That also hardens the pre-existing cmdline consumer, which had the same exposure
+    before this branch.
+
+    A third finding, that 'terminal_output serial console' hangs when no physical
+    console is attached, is not correct. 'console' is GRUB's built-in firmware
+    terminal and is always present; the "not available" warning concerns the serial
+    terminal. The boot-test run that passed is exactly the described case -- a
+    headless VM, all twelve legs green.
+
+commit daf5232155cc3ce8749294f672868d965ade7947
+Author: claude (dev130 fb69d4e9-4716-4e71-ba8c-c9a310d51a5f) <noreply@anthropic.com>
+Date:   Thu Jul 30 16:48:05 2026 -0400
+
+    01_smbios-reader: drive serial and boot immediately under SMBIOS injection
+
+    A boot-tester injects the kernel cmdline via SMBIOS and then drives the guest over
+    the serial root shell. It cannot interact with the GRUB menu, so on a DISK image
+    GRUB waits at the menu with its output on a console nobody is reading: qemu runs
+    with '-vga none -display none', nothing reaches ttyS0, and the tester times out
+    after ten minutes having captured a 0-byte serial log.
+
+    That is the current qcow2 BIOS boot-test failure. The image is fine -- BIOS grub is
+    installed (grub-cloud-amd64 selected, "Installing for i386-pc platform" ran) and the
+    same image boots under EFI.
+
+    When dm_smbios_extra is non-empty, point GRUB at the serial console and set
+    timeout=0 so the default entry boots straight through. A normal boot is unaffected:
+    without injection dm_smbios_extra is empty and the block is skipped, so the menu,
+    its timeout and the video console behave exactly as before.
+
+    Cherry-picked from the fork's ai-boot-test-serial-timeout branch (e25a25d), which
+    never reached upstream. It has no test-side equivalent -- only the image's GRUB
+    config can put GRUB's own output on the serial line -- unlike the mount-shared
+    journal noise, which belongs in dm-image-test and is handled there.
+
+commit 4694bfbbcfe61a6155a0fc4119f5086462a6f59f
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Wed Jul 29 12:21:40 2026 +0000
+
+    bumped changelog version
+
 commit 1c140783056eb2f478c0d1a71dd9785fa9abc3c0
 Merge: fcc5301 5be2567
 Author: Patrick Schleizer <adrelanos@whonix.org>
