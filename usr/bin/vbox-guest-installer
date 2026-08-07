@@ -20,7 +20,18 @@ shopt -s shift_verbose
 ## fail-closed path whose whole job is to report the build variable's value.
 ## Empty is what they expanded to before strict mode.
 dist_build_virtualbox="${dist_build_virtualbox:-}"
-output_command="${output_command:-}"
+## Defaulting output_command to EMPTY was wrong: '${output_command} "msg"'
+## with an empty value makes bash run "msg" ITSELF as the command, so every
+## message became 'command not found' (127) -- and under errexit that fired the
+## ERR trap, which uses ${output_command} too and failed the same way. The
+## abort just moved from "unbound variable" to "command not found".
+##
+## A printf wrapper rather than 'echo': it appends the newline the call sites
+## expect and does not interpret a '%' in the message.
+output_default() {
+  printf '%s\n' "$@"
+}
+output_command="${output_command:-output_default}"
 
 fail_closed_maybe() {
    if [ "${dist_build_virtualbox}" = 'true' ]; then
