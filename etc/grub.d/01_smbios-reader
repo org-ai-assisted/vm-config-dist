@@ -10,6 +10,28 @@ set -o errtrace
 shopt -s inherit_errexit
 shopt -s shift_verbose
 
+## Opt-in, default OFF. The reader is a boot-test facility, not a feature of a
+## shipped system, so a released image contains no reader at all -- there is no
+## code path for a firmware-level attacker to reach, which no in-image test on
+## firmware-supplied data could ever give (all of it is attacker-controllable by
+## definition). A build or a test harness turns it on by dropping a snippet into
+## /etc/default/grub.d, e.g.
+##
+##   printf '%s\n' 'GRUB_ENABLE_DM_SMBIOS_READER="true"' \
+##      > /etc/default/grub.d/50_dm-boot-test.cfg
+##   update-grub
+##
+## The drop-in needs no 'export' of its own: grub-mkconfig hands the /etc/grub.d
+## helpers only its fixed allow-list of GRUB_* variables, so this one reaches this
+## script via the export in etc/default/grub.d/99_smbios-cmdline.cfg, which sources
+## earlier in the same shell. That keeps the reader and the cmdline placeholder on
+## ONE signal rather than two that can disagree.
+[ -v GRUB_ENABLE_DM_SMBIOS_READER ] || GRUB_ENABLE_DM_SMBIOS_READER=""
+
+if [ "${GRUB_ENABLE_DM_SMBIOS_READER}" != "true" ]; then
+   exit 0
+fi
+
 ## Emit a GRUB SMBIOS cmdline reader near the top of the generated grub.cfg (the
 ## '01_' prefix runs before the '10_' menuentry generators, so the variable is set
 ## before any menuentry body executes). It lets a boot-tester inject extra kernel
@@ -28,6 +50,25 @@ shopt -s shift_verbose
 ## the rest as ${dm_smbios_extra}. The regexp and smbios modules are in Debian's
 ## signed grub, so this works on BIOS and EFI; with no SMBIOS string set the reader
 ## is a no-op and ${dm_smbios_extra} stays empty.
+##
+## The serial number is only read when SMBIOS Type 1 Manufacturer (offset 4) says
+## QEMU, which is what the boot-test harness runs under. Everywhere else the reader
+## is inert. This package is pulled in by dist-general-cli, so the reader ships on
+## bare-metal installs too, where the system serial number is a firmware field an
+## attacker with vendor DMI tooling can set -- and the kernel command line is the
+## part of the boot chain Secure Boot does not authenticate. Gating does not stop
+## that attacker (the same tool sets Manufacturer), but it forces the machine to
+## report itself as a QEMU guest to dmidecode, systemd-detect-virt and every
+## inventory system, instead of hiding in a field nobody reads.
+##
+## Manufacturer, not Product Name or the Type 0 BIOS vendor: qemu marks "QEMU" a
+## guest ABI constant (hw/i386/fw_cfg.c) and leaves it alone when only 'serial=' is
+## passed, so it holds across SeaBIOS and OVMF, i440fx and q35, amd64 and arm64.
+## Product Name carries the machine type and Type 0 vendor differs per firmware, so
+## either would break a boot-test leg on a machine type nobody thought about.
+## Reading Manufacturer FIRST also keeps an ordinary boot quiet: DSP0134 requires
+## Manufacturer to be non-null but leaves the serial number optional, and GRUB
+## prints 'error: failed to retrieve the structure field.' for an absent string.
 ##
 ## The heredoc is single-quoted so the shell writes ${dm_smbios_oem} literally for
 ## GRUB to expand at boot.
@@ -53,19 +94,27 @@ shopt -s shift_verbose
 ## there is nothing for stray serial input to interrupt. Restoring a menu wait
 ## here without also pinning terminal_input would reintroduce the hang.
 cat <<'EOF'
+## dm-smbios-reader: begin
 insmod regexp
 insmod smbios
 insmod serial
 ## Cleared first: 'smbios' and 'regexp' leave these untouched when they find no
 ## match, and GRUB variables survive from grub.cfg's earlier 'load_env'. A value
 ## left in grubenv would otherwise make an ordinary boot take the tester path.
+set dm_smbios_vendor=
 set dm_smbios_oem=
 set dm_smbios_extra=
-smbios --type 1 --get-string 7 --set dm_smbios_oem
-regexp --set 1:dm_smbios_extra "^dm-cmdline=(.*)" "${dm_smbios_oem}"
+## Nothing below runs off QEMU: the serial number is only consulted once the
+## manufacturer identifies a QEMU guest.
+smbios --type 1 --get-string 4 --set dm_smbios_vendor
+if [ "${dm_smbios_vendor}" = "QEMU" ]; then
+    smbios --type 1 --get-string 7 --set dm_smbios_oem
+    regexp --set 1:dm_smbios_extra "^dm-cmdline=(.*)" "${dm_smbios_oem}"
+fi
 if [ -n "${dm_smbios_extra}" ]; then
     serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1
     terminal_output serial console
     set timeout=0
 fi
+## dm-smbios-reader: end
 EOF
