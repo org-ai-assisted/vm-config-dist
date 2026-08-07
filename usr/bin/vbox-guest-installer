@@ -92,7 +92,12 @@ _get_newest_kernel_debian() {
 
         if [ -z "${NEWEST_KERNEL}" ]; then
             # The 1st time get a version which is bigger than $1
-            COMPARE_TO=$1
+            ## ':-' because the ONE call site -- the chroot branch below --
+            ## passes no argument at all, so this reads an unset $1 on the first
+            ## /boot/config-* found, which is every run. Empty is what it
+            ## expanded to before nounset, and it means "bigger than nothing",
+            ## so the first kernel seen becomes the baseline.
+            COMPARE_TO="${1:-}"
         else
             # Get the biggest version
             COMPARE_TO="${NEWEST_VERSION}-${NEWEST_ABI}"
