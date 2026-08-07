@@ -1,7 +1,15 @@
 #!/bin/bash
 
-## Copyright (C) 2025 - 2025 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
+## Copyright (C) 2026 - 2026 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
 ## See the file COPYING for copying conditions.
+
+## FIXME: This script MUST be disabled by default and require an explicit
+## opt-in set only by CI to arm it. Otherwise an attacker who is able to write
+## information into SMBIOS can inject arbitrary kernel parameters into any
+## current or future installation of Kicksecure on a victim system. Writing
+## info like this is likely substantially easier than flashing a malicious
+## BIOS, so this is more of a concern than compromised firmware (though the
+## impact may be less bad than compromised firmware).
 
 set -o errexit
 set -o nounset
