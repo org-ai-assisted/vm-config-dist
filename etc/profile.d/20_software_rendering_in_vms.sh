@@ -28,6 +28,6 @@
 
 if command -v detect-software-rendering >/dev/null 2>/dev/null \
    && [ -z "${QMLSCENE_DEVICE+x}" ] \
-   && [ "$(detect-software-rendering)" = "software" ]; then
+   && [ "$(detect-software-rendering 2>/dev/null)" = "software" ]; then
    export QMLSCENE_DEVICE=softwarecontext
 fi
