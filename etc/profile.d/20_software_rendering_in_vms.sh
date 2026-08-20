@@ -3,6 +3,10 @@
 ## Copyright (C) 2020 - 2025 ENCRYPTED SUPPORT LLC <adrelanos@whonix.org>
 ## See the file COPYING for copying conditions.
 
+## style-ok: no-strict
+## Sourced-only login-shell fragment: enabling strict-mode here would leak
+## 'set -o errexit'/'nounset' into (and could kill) the sourcing shell.
+
 ## Automatic fallback to softwarecontext renderer
 ## https://www.kicksecure.com/wiki/Tuning#Renderer
 ##
@@ -34,19 +38,29 @@
 ## OpenGL core profile renderer: llvmpipe (LLVM 19.1.7, 256 bits)
 
 if ! command -v eglinfo >/dev/null 2>/dev/null ; then
-   true "$0 ERROR: eglinfo not found. Stop."
+   true "${0} ERROR: eglinfo not found. Stop."
    return 0
-   exit 0
 fi
 
-eglinfo_output_temp="$(eglinfo -B 2>/dev/null)" || true
+## 'eglinfo' can hang indefinitely when EGL/DRM probing never returns. Seen in
+## headless VMs and Qubes AppVMs with no accelerated GL (no '/dev/dri'): the GBM
+## platform fails fast but a later platform init blocks forever. This file is
+## sourced by every login shell, so an unbounded 'eglinfo' wedges every shell.
+## Bound it with 'timeout': on timeout the output is empty, which falls through
+## to the software-rendering path below -- the correct result in that case anyway.
+## 'timeout' is from coreutils (Essential: yes); guard in case it is ever absent.
+if command -v timeout >/dev/null 2>/dev/null ; then
+   eglinfo_output_temp="$(timeout 5 eglinfo -B 2>/dev/null)" || true
+else
+   eglinfo_output_temp="$(eglinfo -B 2>/dev/null)" || true
+fi
 
 ## Manual test.
 #eglinfo_output_temp="OpenGL core profile renderer: NVIDIA"
 
-opengl_core_profile_renderer_temp="$(printf '%s\n' "$eglinfo_output_temp" | grep -- "OpenGL core profile renderer:")" || true
+opengl_core_profile_renderer_temp="$(printf '%s\n' "${eglinfo_output_temp}" | grep -- "OpenGL core profile renderer:")" || true
 
-if printf '%s\n' "$opengl_core_profile_renderer_temp" | grep --fixed-strings \
+if printf '%s\n' "${opengl_core_profile_renderer_temp}" | grep --fixed-strings \
    -e "AMD" \
    -e "NVIDIA" \
    -e "Intel" \
@@ -66,25 +80,22 @@ if printf '%s\n' "$opengl_core_profile_renderer_temp" | grep --fixed-strings \
    -e "SVGA3D" \
    -e "D3D12" \
    >/dev/null 2>/dev/null; then
-   true "$0 INFO: accelerated graphics renderer detected. Stop."
+   true "${0} INFO: accelerated graphics renderer detected. Stop."
    return 0
-   exit 0
 fi
 
-if printf '%s\n' "$opengl_core_profile_renderer_temp" | grep -- "llvmpipe" >/dev/null 2>/dev/null; then
+if printf '%s\n' "${opengl_core_profile_renderer_temp}" | grep -- "llvmpipe" >/dev/null 2>/dev/null; then
    software_rendering_use=true
 fi
 
-if [ ! "$software_rendering_use" = "true" ]; then
-   true "$0 INFO: software_rendering_use is not set to true. Stop."
+if [ ! "${software_rendering_use}" = "true" ]; then
+   true "${0} INFO: software_rendering_use is not set to true. Stop."
    return 0
-   exit 0
 fi
 
-if [ ! "$QMLSCENE_DEVICE" = "" ]; then
-   true "$0 INFO: QMLSCENE_DEVICE is already set to '$QMLSCENE_DEVICE'. Not changing. Stop."
+if [ ! "${QMLSCENE_DEVICE}" = "" ]; then
+   true "${0} INFO: QMLSCENE_DEVICE is already set to '${QMLSCENE_DEVICE}'. Not changing. Stop."
    return 0
-   exit 0
 fi
 
 export QMLSCENE_DEVICE=softwarecontext
