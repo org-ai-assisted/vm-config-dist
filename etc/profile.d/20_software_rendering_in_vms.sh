@@ -7,23 +7,20 @@
 ## Sourced-only login-shell fragment: enabling strict-mode here would leak
 ## 'set -o errexit'/'nounset' into (and could kill) the sourcing shell.
 
-## Automatic fallback to the 'softwarecontext' QML renderer when the OpenGL
-## renderer is (best guess) mesa's llvmpipe CPU renderer.
+## Fall back to the 'softwarecontext' QML renderer when GL is software-rendered:
+## it avoids GL crashes in e.g. Monero and signal-desktop (and hurts shotcut,
+## kdenlive).
 ## https://www.kicksecure.com/wiki/Tuning#Renderer
-##
-## Useful for (softwarecontext avoids GL crashes):
-## - Monero          https://github.com/monero-project/monero-gui/issues/2878
-## - signal-desktop
-## Causes issues for: shotcut, kdenlive.
+## https://github.com/monero-project/monero-gui/issues/2878
 ## https://forums.whonix.org/t/video-editing-software-fails-to-launch-on-whonix-virtualbox-kvm/17241
-
-## The renderer detection (a bounded, best-effort 'eglinfo' probe) lives in
-## helper-scripts as 'detect-software-rendering'; vm-config-dist depends on it.
-## Only set QMLSCENE_DEVICE when unset, so an explicit user choice always wins.
 ##
-## Only a confident 'software' (llvmpipe) guess forces softwarecontext.
-## 'accelerated' and 'unknown' (eglinfo absent / timed out) deliberately err
-## toward acceleration-available and leave QMLSCENE_DEVICE unset: forcing
+## The renderer detection lives in helper-scripts 'detect-software-rendering'
+## (vm-config-dist depends on it); it prints 'software', 'accelerated' or
+## 'unknown'. How it decides is documented there -- not restated here.
+##
+## Policy of THIS consumer: set QMLSCENE_DEVICE only when it is unset (an explicit
+## user choice wins) and only on a confident 'software'. 'accelerated' and
+## 'unknown' err toward acceleration-available and leave it unset -- forcing
 ## software rendering where hardware acceleration exists is the worse mistake.
 
 if command -v detect-software-rendering >/dev/null 2>/dev/null \
