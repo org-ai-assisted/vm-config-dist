@@ -20,6 +20,11 @@
 ## The renderer detection (a bounded, best-effort 'eglinfo' probe) lives in
 ## helper-scripts as 'detect-software-rendering'; vm-config-dist depends on it.
 ## Only set QMLSCENE_DEVICE when unset, so an explicit user choice always wins.
+##
+## Only a confident 'software' (llvmpipe) guess forces softwarecontext.
+## 'accelerated' and 'unknown' (eglinfo absent / timed out) deliberately err
+## toward acceleration-available and leave QMLSCENE_DEVICE unset: forcing
+## software rendering where hardware acceleration exists is the worse mistake.
 
 if command -v detect-software-rendering >/dev/null 2>/dev/null \
    && [ -z "${QMLSCENE_DEVICE:-}" ] \
