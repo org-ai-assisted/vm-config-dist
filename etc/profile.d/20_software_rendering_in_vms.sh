@@ -27,7 +27,7 @@
 ## software rendering where hardware acceleration exists is the worse mistake.
 
 if command -v detect-software-rendering >/dev/null 2>/dev/null \
-   && [ -z "${QMLSCENE_DEVICE:-}" ] \
+   && [ -z "${QMLSCENE_DEVICE+x}" ] \
    && [ "$(detect-software-rendering)" = "software" ]; then
    export QMLSCENE_DEVICE=softwarecontext
 fi
