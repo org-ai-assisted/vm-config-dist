@@ -48,49 +48,27 @@ main() {
   mkdir --parents /mnt/shared --mode 770 || exit 1
   chown "root:${shared_folder_group}" /mnt/shared || exit 1
 
+  mount_failed_msg="INFO: could not mount /mnt/shared; leaving it unmounted. Probably no share named 'shared' is configured on the host."
+
   ## Copy the appropriate README file, and mount the shared folder if possible.
   case "${virt_type}" in
     kvm)
       cp --no-clobber -- /usr/share/doc/vm-config-dist/shared-folder-kvm-README.md /mnt/shared/README.md || true
       ## Try virtiofs first, it works much better and is now recommended.
-      ## If that fails, fall back to 9pfs.
-      ## 9pfs does not respect uid, gid, or umask parameters. virtiofs should not be used with any of these parameters.
-      ## A missing shared folder is the NORMAL case: this unit is gated on the
-      ## hypervisor (ConditionVirtualization=|qemu|kvm), not on whether the host
-      ## actually exported a share, so it runs on every plain QEMU/KVM guest.
-      ##
-      ## The '|| true' already made that non-fatal, but mount still wrote its
-      ## error to stderr, so every such boot logged
-      ##   mount: /mnt/shared: wrong fs type, bad option, bad superblock ...
-      ## which systemcheck's journal check then reports as a WARNING. The mount
-      ## was fine; the NOISE was the defect.
-      ##
-      ## Capture both attempts and report the outcome honestly: silence when a
-      ## share was mounted, one INFO line when none was exported, and the real
-      ## error preserved so a share that exists but is genuinely broken is still
-      ## diagnosable.
-      if ! virtiofs_error="$(mount -t virtiofs shared /mnt/shared 2>&1)"; then
-        if ! ninep_error="$(mount -t 9p -o trans=virtio shared /mnt/shared -oversion=9p2000.L 2>&1)"; then
-          ## State what was OBSERVED, not a cause. Two failed mounts do not prove
-          ## the host exported nothing: the unit is gated on the hypervisor, not
-          ## on share configuration, so an exported-but-broken share reaches here
-          ## too. Naming the wrong cause would send a reader down the wrong path.
-          printf '%s\n' \
-            "INFO: could not mount /mnt/shared; leaving it unmounted." \
-            "INFO: expected when no share named 'shared' is configured on the host; the attempts follow."
-          ## Prefix EVERY line. mount emits multiline diagnostics (a bare
-          ## "dmesg(1) may have more information ..." continuation is routine), and
-          ## an unlabelled continuation is exactly the loose journal line this
-          ## change exists to stop producing.
-          printf '%s\n' "${virtiofs_error}" | sed -e 's/^/INFO: virtiofs: /'
-          printf '%s\n' "${ninep_error}" | sed -e 's/^/INFO: 9p: /'
-        fi
+      if ! virtiofs_error="$(mount -t virtiofs shared /mnt/shared 2>&1)" \
+        && ! ninep_error="$(mount -t 9p -o trans=virtio shared /mnt/shared -oversion=9p2000.L 2>&1)"; then
+        printf '%s\n' "${mount_failed_msg}"
+        printf '%s\n' "INFO: virtiofs: ${virtiofs_error}"
+        printf '%s\n' "INFO: 9p: ${ninep_error}"
       fi
       ;;
     vbox)
       cp --no-clobber -- /usr/share/doc/vm-config-dist/shared-folder-vbox-README.md /mnt/shared/README.md || true
       target_group_id="$(accountctl vboxsf get-entry group gid)"
-      mount -t vboxsf -o uid=0,gid="${target_group_id}",umask=0007 shared /mnt/shared || true
+      if ! vboxsf_error="$(mount -t vboxsf -o uid=0,gid="${target_group_id}",umask=0007 shared /mnt/shared 2>&1)"; then
+        printf '%s\n' "${mount_failed_msg}"
+        printf '%s\n' "INFO: vboxsf: ${vboxsf_error}"
+      fi
       ;;
   esac
 }

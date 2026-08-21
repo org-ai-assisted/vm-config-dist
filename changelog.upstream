@@ -1,9 +1,129 @@
+commit 74b92cfb8d1d99ca56151408d9646b3f1180cda4
+Merge: 224f7bc 69b1041
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Sat Aug 15 12:56:19 2026 -0400
+
+    Merge remote-tracking branch 'refs/remotes/org-ai-assisted/master'
+
+commit 224f7bc162858164bfe2ed50bc5b8eb653c7ec76
+Merge: f8b643d f986223
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Mon Aug 10 09:42:42 2026 -0400
+
+    Merge remote-tracking branch 'refs/remotes/ArrayBolt3/arraybolt3/trixie'
+
+commit f9862237457eabaeb7350bddbcf3faaf8c48b4b7
+Author: Aaron Rainbolt <arraybolt3@gmail.com>
+Date:   Thu Aug 6 22:26:36 2026 -0400
+
+    Tweaks, fix inefficiencies, a missing feature, and excessive comments in mount-shared
+
+commit 33e52ebef8fc78e319f4970b2261b24054161b25
+Merge: f8b643d 55ab085
+Author: Aaron Rainbolt <arraybolt3@gmail.com>
+Date:   Thu Aug 6 21:24:19 2026 -0400
+
+    Merge branch 'ai' into arraybolt3/trixie
+
+commit 55ab085368dd6f3fb6b2dc006cd7d4b1fd5b25f5
+Author: claude (dev141 763ccfe0-7bd8-4e8c-afd0-c39aceb48d72) <noreply@anthropic.com>
+Date:   Sun Aug 2 07:35:39 2026 -0400
+
+    mount-shared: state what was observed, and prefix every line
+
+    Both from CodeRabbit on PR #8; verified against the code before applying.
+
+    - The message claimed "no shared folder exported by the hypervisor". Two failed
+      mounts do not prove that. The unit is gated on the hypervisor, not on share
+      configuration, so an exported-but-BROKEN share reaches the same branch. Naming
+      the wrong cause sends a reader down the wrong path -- the precise fault this
+      change set out to fix elsewhere. Now reports what was observed: could not
+      mount, leaving it unmounted, attempts follow.
+    - Only the first line of each captured error carried the INFO prefix. mount emits
+      multiline diagnostics (a "dmesg(1) may have more information" continuation is
+      routine), so continuations appeared as bare journal lines -- exactly the loose
+      output this change exists to stop producing. Every line is prefixed now.
+
+    Verified: a real two-line mount error yields zero unprefixed lines, and the three
+    mount situations still behave as before (silent on success either transport,
+    INFO-only when nothing mounts).
+
+    Co-Authored-By: Claude <noreply@anthropic.com>
+
+commit 87d4f62181d95db11f68b15dc1cbe7f8c3638c5f
+Author: claude (dev141 763ccfe0-7bd8-4e8c-afd0-c39aceb48d72) <noreply@anthropic.com>
+Date:   Sun Aug 2 07:04:49 2026 -0400
+
+    mount-shared: stop logging a scary mount error when no share is exported
+
+    mnt-shared-kvm.service is gated on the HYPERVISOR (ConditionVirtualization=|qemu
+    |kvm), not on whether the host actually exported a share, so it runs on every
+    plain QEMU/KVM guest. The '|| true' already made a missing share non-fatal, but
+    mount still wrote to stderr, so every such boot logged:
+
+      mount: /mnt/shared: wrong fs type, bad option, bad superblock on shared,
+      missing codepage or helper program, or other error.
+
+    systemcheck's journal check then reports that as a WARNING. Observed on a clean
+    boot of a stock Kicksecure qcow2 under qemu: the mount behaved exactly as
+    designed, and the NOISE was the defect.
+
+    Capture both attempts and report honestly: silent when a share mounts (virtiofs
+    or the 9p fallback), one INFO block when none was exported, with BOTH underlying
+    errors preserved so a share that exists but is genuinely broken stays
+    diagnosable -- swallowing them would trade a false alarm for a blind spot.
+
+    Verified synthetically (stubbed mount, no VM, no rebuild) across all three
+    situations: no share -> INFO only, zero bare 'mount:' lines on stderr; virtiofs
+    present -> silent; virtiofs absent with 9p working -> silent, two attempts made.
+
+    Co-Authored-By: Claude <noreply@anthropic.com>
+
+commit 69b1041876c0d6d4b96907ef5d1129edfd9390e0
+Merge: f8b643d 64d047a
+Author: assisted-by-ai (Bot Account) (Machine Account) <228987186+assisted-by-ai@users.noreply.github.com>
+Date:   Sat Aug 1 05:01:01 2026 -0400
+
+    Merge pull request #7 from org-ai-assisted/ai
+
+    CI: add bandit, codeql-actions, secrets-audit scanner workflows
+
+commit f8b643d58b004d2d1f461adc0cffdf9242687d29
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Sat Aug 1 08:45:11 2026 +0000
+
+    bumped changelog version
+
 commit 1db38c8c5b9ae267800c430dc899eff4bda8efa8
 Merge: 4694bfb 7a022ad
 Author: Patrick Schleizer <adrelanos@whonix.org>
 Date:   Sat Aug 1 04:33:10 2026 -0400
 
     Merge remote-tracking branch 'refs/remotes/org-ai-assisted/master'
+
+commit 64d047a4476a1878a501d90b7d7683e9af583854
+Author: claude (dev142 b93fb2c6-e15f-4d45-8566-f3ded893b70e) <noreply@anthropic.com>
+Date:   Fri Jul 31 16:23:30 2026 -0400
+
+    CI: propagate bandit, codeql-actions, secrets-audit workflows
+
+    Byte-identical propagation from developer-meta-files
+    consumer-templates. Closes scanner-coverage gaps:
+
+    - consumer-bandit.yml: Python security lint, universal
+      self-discovery (extension + shebang scan), no per-repo config.
+    - consumer-codeql-actions.yml: CodeQL 'actions' language --
+      workflow-YAML security analysis (script-injection, missing
+      permissions, unpinned actions).
+    - consumer-secrets-audit.yml: manual-dispatch secrets surface
+      audit (presence flags only, values never emitted).
+
+    Managed files -- do not hand-edit; regenerated on the next
+    propagation pass.
+
+    ## AI-Assisted
+
+    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 
 commit 7a022ad13a03cd08f840b341c5e122e31d51f3d7
 Merge: 4694bfb 02db0fb
