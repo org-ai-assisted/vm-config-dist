@@ -7,15 +7,18 @@ set -o errexit
 set -o nounset
 set -o errtrace
 set -o pipefail
+shopt -s inherit_errexit
+shopt -s shift_verbose
+export LC_ALL=C
 
 # shellcheck source=../libexec/helper-scripts/get_colors.sh
-source /usr/libexec/helper-scripts/get_colors.sh
+source "${HELPER_SCRIPTS_PATH:-}"/usr/libexec/helper-scripts/get_colors.sh
 
 # shellcheck source=../libexec/helper-scripts/log_run_die.sh
-source /usr/libexec/helper-scripts/log_run_die.sh
+source "${HELPER_SCRIPTS_PATH:-}"/usr/libexec/helper-scripts/log_run_die.sh
 
 # shellcheck source=../libexec/helper-scripts/as_root.sh
-source /usr/libexec/helper-scripts/as_root.sh
+source "${HELPER_SCRIPTS_PATH:-}"/usr/libexec/helper-scripts/as_root.sh
 
 log_level=info
 
@@ -49,7 +52,7 @@ generated_file_header() {
 ##
 ## Want to change something?
 ## Run this tool again:
-##   sudo $my_base_name
+##   sudo ${my_base_name}
 ##
 ## Deleting this file is OK.
 ##   sudo safe-rm -- /etc/wlr-resize-watcher.d/45_configure-dynamic-resolution.conf
@@ -111,7 +114,7 @@ write_config_value() {
 
   ## Ensure the file always starts with the generated header comment.
   ## If the file exists and already has the header, keep it; otherwise add it.
-  if ! grep -qF "## This file was created by:" <<< "${config_file_contents}"; then
+  if ! grep --quiet --fixed-strings "## This file was created by:" <<< "${config_file_contents}"; then
     config_file_contents="$(generated_file_header)"$'\n\n'"${config_file_contents}"
   fi
 
@@ -324,7 +327,7 @@ configure_dynamic_resolution() {
         else
           log question "Enter a resolution like 1920x1080. Press Enter to use ${default_resolution}."
           read -r resolution_opt
-          resolution_opt="${resolution_opt:-$default_resolution}"
+          resolution_opt="${resolution_opt:-${default_resolution}}"
         fi
 
         normalized_value="$(validate_resolution_opt "${resolution_opt}")"
@@ -361,11 +364,7 @@ configure_dynamic_resolution() {
   done
 }
 
-command -v id >/dev/null
-command -v stcatn >/dev/null
-command -v sed >/dev/null
-command -v overwrite >/dev/null
-command -v grep >/dev/null
+die_if_not_has id stcatn sed overwrite grep
 
 log info "User documentation:
 https://www.whonix.org/wiki/resize"
@@ -387,8 +386,8 @@ fi
 
 if [ -n "${SUDO_USER-}" ]; then
   log info "Restarting 'wlr-resize-watcher.service'..."
-  xdg_runtime_dir="/run/user/$(id --user -- "$SUDO_USER")"
-  log_run info sudo --user="$SUDO_USER" -- env XDG_RUNTIME_DIR="$xdg_runtime_dir" systemctl --user restart wlr-resize-watcher.service
+  xdg_runtime_dir="/run/user/$(id --user -- "${SUDO_USER}")"
+  log_run info sudo --user="${SUDO_USER}" -- env XDG_RUNTIME_DIR="${xdg_runtime_dir}" systemctl --user restart wlr-resize-watcher.service
 else
   log notice "Cannot automatically restart the wlr-resize-watcher.service because the environment variable SUDO_USER is unavailable."
   log warn "To apply changes: reboot, or run this (without sudo) as your normal user:"
