@@ -1,3 +1,167 @@
+commit 9787f6d0c07e8983d627e9d3bf4e93d5fd42f128
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Sat Aug 22 05:01:22 2026 -0400
+
+    comment
+
+commit dab76b5328d99907fc534c81afd21cf2f019ff52
+Merge: 211c996 1cf6d69
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Sat Aug 22 04:56:56 2026 -0400
+
+    Merge remote-tracking branch 'org-ai-assisted/ai'
+
+commit 1cf6d692546cbee145fbddb734ea7b9d37be0a89
+Author: claude (dev272 e8b76afb-795c-4739-8ebd-023de854021e) <noreply@anthropic.com>
+Date:   Fri Aug 21 05:04:51 2026 -0400
+
+    vm-config-dist: source helper-scripts via HELPER_SCRIPTS_PATH + clear whole-file gate debt
+
+    configure-dynamic-resolution:
+
+    - source: get_colors.sh, log_run_die.sh, as_root.sh now via
+      source "${HELPER_SCRIPTS_PATH:-}"/usr/libexec/helper-scripts/<f>
+      (no SC1091 disable was present to drop).
+    - R-010: complete the strict-mode block (was 4/7) by adding
+      shopt -s inherit_errexit, shopt -s shift_verbose, export LC_ALL=C.
+      inherit_errexit audit: every command substitution reviewed. The
+      validate_bool_opt / validate_resolution_opt / generated_file_header
+      helpers all exit 0 unconditionally, so inherit_errexit cannot make
+      their subs abort. The remaining subs (basename, stcatn, id, sed)
+      represent genuine failures that SHOULD abort rather than proceed with
+      garbage. No '|| true' guard is needed for any sub.
+    - R-090 (x5): replace the 'command -v id/stcatn/sed/overwrite/grep'
+      pre-flight with the shared 'die_if_not_has id stcatn sed overwrite
+      grep' (has/die_if_not_has already in scope via log_run_die.sh).
+    - R-161: line 114 'grep -qF' short quiet cluster -> long form
+      'grep --quiet --fixed-strings' (here-string input, not a pipe).
+    - SC2250 (x5 refs): brace ${my_base_name}, ${default_resolution},
+      ${SUDO_USER} (x2), ${xdg_runtime_dir}.
+
+    No waiver added.
+
+    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+
+commit a7df31b052c1240be8dbc9bf3ec50d6a8d1d2cdb
+Merge: 1f26ab4 211c996
+Author: claude (reviewdrain12 677bd186-8001-418b-9582-8236bc8dff20) <noreply@anthropic.com>
+Date:   Fri Aug 21 04:56:59 2026 -0400
+
+    Merge branch 'master' into ai
+
+commit 1f26ab44afb77ee45c92e092340ef9a8270b227a
+Author: claude (dev272 e8b76afb-795c-4739-8ebd-023de854021e) <noreply@anthropic.com>
+Date:   Fri Aug 21 04:35:06 2026 -0400
+
+    vm-config-dist: source helper-scripts via HELPER_SCRIPTS_PATH, drop SC1091 disable
+
+    - spice-vdagent.dist: use source
+      "${HELPER_SCRIPTS_PATH:-}"/usr/libexec/helper-scripts/has.sh; drop the dead
+      '# shellcheck disable=SC1091' and the stale sibling note.
+    - completed pre-existing whole-file style debt (R-010: add export LC_ALL=C).
+
+    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+
+commit 78a5d021005b7c66a823972528096fd44677341a
+Author: claude (dev254 629ffcaf-81f7-4498-8ca9-ec34dc26399d) <noreply@anthropic.com>
+Date:   Thu Aug 20 07:43:18 2026 -0400
+
+    20_software_rendering_in_vms.sh: terser consumer comment
+
+commit 10e0bbe8c2c1c70505ab8c7062ada361cf73ce1b
+Author: claude (dev254 629ffcaf-81f7-4498-8ca9-ec34dc26399d) <noreply@anthropic.com>
+Date:   Thu Aug 20 07:40:27 2026 -0400
+
+    20_software_rendering_in_vms.sh: keep detection details out of the consumer
+
+    The comment restated the helper's internals (eglinfo probe, llvmpipe, timeout),
+    which drift when the helper changes -- and already had (it now short-circuits
+    before eglinfo). Keep only this consumer's policy and the helper's stable output
+    contract (software/accelerated/unknown), and point to the helper for how it
+    decides.
+
+commit 815b67f08ffca077edaecd489b9af60fdb624e56
+Author: claude (dev254 629ffcaf-81f7-4498-8ca9-ec34dc26399d) <noreply@anthropic.com>
+Date:   Thu Aug 20 07:37:12 2026 -0400
+
+    20_software_rendering_in_vms.sh: silence the probe's stderr at login
+
+    A login-shell fragment should not leak the helper's stderr; drop it in the
+    command substitution.
+
+commit 8246f876e2738ffa6d31e51dac2f1724f6873e76
+Author: claude (dev254 629ffcaf-81f7-4498-8ca9-ec34dc26399d) <noreply@anthropic.com>
+Date:   Thu Aug 20 07:33:24 2026 -0400
+
+    20_software_rendering_in_vms.sh: respect an explicitly empty QMLSCENE_DEVICE
+
+    Test QMLSCENE_DEVICE unset via ${QMLSCENE_DEVICE+x} instead of -z "${:-}", which
+    treated an explicit QMLSCENE_DEVICE="" the same as unset and overwrote it. Matches
+    the 'explicit user choice wins' intent. (ai-review)
+
+    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+
+commit 04acb3dfd5da7a28460fced7a510aa6cb34f51c3
+Author: claude (dev254 629ffcaf-81f7-4498-8ca9-ec34dc26399d) <noreply@anthropic.com>
+Date:   Thu Aug 20 06:27:03 2026 -0400
+
+    20_software_rendering_in_vms.sh: bump copyright to 2026 (modified this year)
+
+commit 196231c1a84f9f3b93b6376a65fbe5cb68895090
+Author: claude (dev254 629ffcaf-81f7-4498-8ca9-ec34dc26399d) <noreply@anthropic.com>
+Date:   Thu Aug 20 05:38:25 2026 -0400
+
+    20_software_rendering_in_vms.sh: document the conservative renderer policy
+
+    Only a confident 'software' (llvmpipe) guess forces softwarecontext; 'accelerated'
+    and 'unknown' err toward acceleration-available and leave QMLSCENE_DEVICE unset.
+    Documents the deliberate choice (forcing software where HW accel exists is worse);
+    no behaviour change.
+
+commit ef6f9fb0520a4536bbfb90c62d98c4acbb514cbc
+Author: claude (dev254 629ffcaf-81f7-4498-8ca9-ec34dc26399d) <noreply@anthropic.com>
+Date:   Thu Aug 20 03:07:23 2026 -0400
+
+    20_software_rendering_in_vms.sh: use helper-scripts detect-software-rendering
+
+    Replace the inline eglinfo probe (added in the previous commit) with a call to
+    the new standalone helper-scripts 'detect-software-rendering', so the bounded
+    best-effort renderer guess has a single home and is reusable.
+
+    vm-config-dist already Depends on helper-scripts. The 'command -v' guard keeps
+    this a no-op if an older helper-scripts without the command is installed
+    transiently during an upgrade -- the same do-nothing outcome as a missing
+    eglinfo. Behaviour is otherwise unchanged: QMLSCENE_DEVICE is set to
+    softwarecontext only when the renderer is guessed to be llvmpipe and the
+    variable is unset (an explicit user choice wins).
+
+    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+
+commit f8aef0502334311befc88b2277124ac8871cda80
+Author: claude (dev254 629ffcaf-81f7-4498-8ca9-ec34dc26399d) <noreply@anthropic.com>
+Date:   Thu Aug 20 02:43:06 2026 -0400
+
+    20_software_rendering_in_vms.sh: bound eglinfo with a timeout
+
+    eglinfo can hang indefinitely when EGL/DRM probing never returns. On a
+    headless VM or Qubes AppVM with no accelerated GL (no /dev/dri), the GBM
+    platform fails fast but a later platform init blocks forever. This file is
+    sourced by every login shell, so an unbounded eglinfo wedges every
+    interactive shell -- observed as ~86s added to every shell startup.
+
+    Wrap the probe in `timeout 5`. On timeout the captured output is empty,
+    which falls through to the existing software-rendering path -- the correct
+    result in exactly that no-acceleration environment. Guard on
+    `command -v timeout` in case coreutils' timeout is ever absent.
+
+    Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
+
+commit 211c996bdcaa34c9a782ef5edcb0bf6cacc6a624
+Author: Patrick Schleizer <adrelanos@whonix.org>
+Date:   Mon Aug 17 04:57:47 2026 +0000
+
+    bumped changelog version
+
 commit 74b92cfb8d1d99ca56151408d9646b3f1180cda4
 Merge: 224f7bc 69b1041
 Author: Patrick Schleizer <adrelanos@whonix.org>
@@ -11,6 +175,292 @@ Author: Patrick Schleizer <adrelanos@whonix.org>
 Date:   Mon Aug 10 09:42:42 2026 -0400
 
     Merge remote-tracking branch 'refs/remotes/ArrayBolt3/arraybolt3/trixie'
+
+commit 03b5ba65ae6414495dbe878d76bcc27b69ec7da1
+Author: claude (dev165 6b2fcae5-ab58-4636-91b6-0eca317a86c6) <noreply@anthropic.com>
+Date:   Sat Aug 8 06:41:29 2026 -0400
+
+    99_smbios-cmdline.cfg: repair the opt-in comment
+
+    8d1580c inserted its paragraph in the middle of a sentence, leaving "a released
+    image" running straight into "OPTING OUT needs a manual 'sudo update-grub'", and
+    the rest of the original sentence orphaned as a new paragraph beginning "carries
+    neither the reader nor this placeholder."
+
+    Both statements are correct and both are kept; they are now separate paragraphs
+    in the order they make sense: what a released image carries, then what opting out
+    afterwards requires.
+
+    The enabling example was also stale. It printed a drop-in by hand to
+    50_dm-boot-test.cfg, which is neither how it is done nor the current filename:
+    derivative-maker copies this package's static
+    usr/share/vm-config-dist/50_dm-smbios-reader.cfg under '--smbios-reader true'.
+    Configuration files are not generated by hand, so the comment no longer shows
+    that as the way to enable it.
+
+    Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
+commit 8d1580cb162588ba2a640e70b543216d1d5b1bf7
+Author: claude (dev163 38f9745c-aed1-4fb4-b6ae-9899f20f8de2) <noreply@anthropic.com>
+Date:   Sat Aug 8 06:14:05 2026 -0400
+
+    99_smbios-cmdline.cfg: document that opting out needs update-grub
+
+    The reader is OPT-IN and inert by default: 01_smbios-reader exits 0 unless
+    GRUB_ENABLE_DM_SMBIOS_READER is 'true', and a default install carries neither
+    the reader nor the placeholder.
+
+    A reviewer noted the guard only changes the INPUT to a future update-grub, and
+    that nothing in this package regenerates grub.cfg -- so a machine could keep
+    reading SMBIOS after the setting changed.
+
+    Documented rather than fixed with a postinst trigger, because opt-in narrows it
+    to one case: someone who opted IN and later opts OUT still has the reader block
+    in their existing /boot/grub/grub.cfg until grub-mkconfig runs again. A machine
+    that never opted in has no block to clear. Adding a boot-config regeneration to
+    every install of this package to serve a deliberate admin opt-out would be
+    disproportionate.
+
+    Per the maintainer: no way was found to use SMBIOS injection securely, so the
+    opt-in IS the mitigation -- there is no further hardening to design here.
+
+commit 0a7b3538adcd57093d873331ee7d7fb61c3bb221
+Author: claude (dev165 6b2fcae5-ab58-4636-91b6-0eca317a86c6) <noreply@anthropic.com>
+Date:   Sat Aug 8 05:52:15 2026 -0400
+
+    Add the static SMBIOS-reader opt-in drop-in
+
+    usr/share/vm-config-dist/50_dm-smbios-reader.cfg, copied into
+    /etc/default/grub.d by derivative-maker's 3500_install-packages under
+    '--smbios-reader true'. Not installed there by this package: a released image
+    must never receive it.
+
+    Ships as a file rather than being printf-ed inside the build step, so the
+    configuration can be read, reviewed and diffed where it lives instead of
+    depending on a build script's quoting.
+
+    Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
+commit 52d208707867e814c42c02c603744da50e7f7106
+Author: claude (dev165 6b2fcae5-ab58-4636-91b6-0eca317a86c6) <noreply@anthropic.com>
+Date:   Sat Aug 8 04:15:35 2026 -0400
+
+    SMBIOS reader: check the serial-number string index before reading it
+
+    Type 1 offset 7 holds a string INDEX, and 0 means "no string" (DSP0134 6.1.3).
+    Asking for the string when the index is 0 makes GRUB print
+
+      error: failed to retrieve the structure field.
+
+    on the console. That is EVERY ordinary boot of an image built with the reader:
+    the QEMU gate passes on any QEMU guest, and the serial is set only when a tester
+    injects. Probe the index byte first -- that call never errors -- and read the
+    string only when it is non-zero.
+
+    Measured on real GRUB, both cases:
+
+      no injection   serial_index=[0]  unguarded -> error printed, rc 29
+                                       guarded   -> read skipped, silent
+      injection      serial_index=[4]  both read [dm-cmdline=console=ttyS0]
+
+    Also corrects the comment above the gate. It claimed reading Manufacturer first
+    keeps an ordinary boot quiet; that holds on bare metal, where the gate fails, but
+    not under QEMU, where it passes. The index check is what covers the QEMU case.
+
+    Found by coderabbit on PR #8.
+
+    Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
+commit 00dd9192ce945d621227dce2262d236377116908
+Author: claude (dev163 38f9745c-aed1-4fb4-b6ae-9899f20f8de2) <noreply@anthropic.com>
+Date:   Fri Aug 7 14:59:12 2026 -0400
+
+    vbox-guest-installer: kernel selector aborted on its own call site
+
+    _get_newest_kernel_debian reads $1 on its first loop iteration, to seed
+    "find a version bigger than this". Its ONE call site -- the chroot branch that
+    sets TARGET_VER -- passes no argument at all.
+
+    Under the nounset added by R-010 that aborts on the first /boot/config-* found,
+    which is every run on a normal image build, and the ERR handler fires before
+    Guest Additions are ever installed.
+
+    Empty is what $1 expanded to before, and it is meaningful here: "bigger than
+    nothing" makes the first kernel seen the baseline, which is exactly what a
+    no-argument call wants.
+
+    Found by codex.
+
+    Testing
+    -------
+
+    Gate exit 0 in an ISOLATED checkout.
+
+    The function is driven directly with /boot bind-mounted from a fixture, so the
+    result does not depend on which kernels the test host happens to have:
+
+      4 pass, 0 fail
+
+      no argument, one kernel (the real call site)  old ABORTS, new 6.1.0-13-amd64
+      no argument, three kernels -> newest wins     old ABORTS, new 6.1.0-18-amd64
+      explicit argument still works                 unchanged
+      no /boot/config-* at all                      unchanged
+
+    The two no-argument rows assert the OLD version aborts AND what the new one
+    returned -- the three-kernel case exists so that "does not abort" cannot pass a
+    version that picks the wrong kernel.
+
+    Canary: restoring the bare $1 gives 2 pass / 2 fail, and the two that fail are
+    exactly the no-argument rows.
+
+commit d8f36efe4be148c4e1e1e95c44624a9ffce30eae
+Author: claude (dev163 38f9745c-aed1-4fb4-b6ae-9899f20f8de2) <noreply@anthropic.com>
+Date:   Fri Aug 7 12:41:18 2026 -0400
+
+    vm-config-dist: give output_command a real default instead of an empty one
+
+    An ai-review pass found that defaulting output_command to EMPTY did not fix
+    anything -- it moved the failure.
+
+      output_command="${output_command:-}"
+      ...
+      ${output_command} "$0 ERROR: ... failing closed." >&2
+
+    With an empty value the expansion vanishes and bash runs the MESSAGE ITSELF as
+    a command. Demonstrated directly:
+
+      $ output_command=""; ${output_command} "some message here"
+      bash: some message here: command not found
+
+    So every message became 'command not found' (127), and under the errexit this
+    pass added that fired the ERR trap -- which uses ${output_command} too and
+    failed the same way. The abort simply moved from "unbound variable" to
+    "command not found".
+
+    output_command now defaults to a small printf wrapper:
+
+      output_default() {
+        printf '%s\n' "$@"
+      }
+      output_command="${output_command:-output_default}"
+
+    A wrapper rather than 'echo' because it appends the newline the call sites
+    expect and does not interpret a '%' in the message.
+
+    Testing
+    -------
+
+    Gate exit 0 in an ISOLATED checkout.
+
+      8 same, 0 differing
+
+    One case added: the fail-closed path run AS ROOT with NO output_command at all
+    -- the installed-system case. Every existing root case supplied
+    'output_command=echo', so the DEFAULT was never exercised, which is exactly why
+    an empty default looked fine.
+
+commit d7c19fa5ae98261ff37e21504b37c0dbc5f3a3ca
+Merge: ec04d7c 69b1041
+Author: claude (dev163 38f9745c-aed1-4fb4-b6ae-9899f20f8de2) <noreply@anthropic.com>
+Date:   Fri Aug 7 12:32:36 2026 -0400
+
+    Merge org-ai-assisted/master into ai
+
+    The branch was created from a stale local master, so its PR diff showed
+    master's newer commits -- including a changelog version bump -- as REMOVALS.
+    Merging rather than rebasing, per the no-history-rewrites rule.
+
+commit ec04d7c616359d3aa27b0706cd476fdf59e8d9e2
+Author: claude (dev165 6b2fcae5-ab58-4636-91b6-0eca317a86c6) <noreply@anthropic.com>
+Date:   Fri Aug 7 12:01:06 2026 -0400
+
+    SMBIOS grub cmdline reader: opt-in, and gated on QEMU
+
+    The reader turns a firmware-supplied string into kernel command line, and the
+    kernel command line is the part of the boot chain Secure Boot does not
+    authenticate. It exists only for the QEMU boot-test harness, so a released image
+    must not carry it.
+
+    - etc/grub.d/01_smbios-reader: emit nothing unless GRUB_ENABLE_DM_SMBIOS_READER
+      is "true". derivative-maker's '--smbios-reader true' writes the drop-in that
+      sets it; default off.
+    - etc/default/grub.d/99_smbios-cmdline.cfg: same guard for the
+      ${dm_smbios_extra} placeholder, and export the variable here so the /etc/grub.d
+      helper (a child process, which grub-mkconfig hands only its own allow-list of
+      GRUB_* variables) sees the same signal. Without the export a plain assignment
+      added the placeholder while no reader was emitted -- inert, but the two halves
+      must mean the same thing.
+    - Second layer for an image that IS built with the reader: read the serial number
+      only when SMBIOS Type 1 Manufacturer says QEMU. Detectability, not a boundary --
+      the same vendor DMI tool sets Manufacturer -- but it forces the machine to
+      advertise itself as a QEMU guest instead of hiding in a field nobody reads.
+      Reading Manufacturer first also drops the 'error: failed to retrieve the
+      structure field.' GRUB prints when the serial number is unset.
+    - Sentinel comments delimit the block, so dm-grub-smbios-tests compares the whole
+      reader rather than a prefix.
+
+    Verified on a built image, no rebuild: patched the generated /boot/grub/grub.cfg
+    and booted. Injection accepted under QEMU (32 KB serial), refused under
+    -smbios type=1,manufacturer='Dell Inc.' (0 bytes), normal boot unaffected
+    (0 bytes). The unhardened reader accepts the spoofed vendor, so the test can fail.
+    Opt-in verified through the image's own update-grub in a chroot: absent 0 reader
+    lines / 0 placeholders, enabled 5 / 11.
+
+    Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
+commit ec140b1812b0387adb75ed1711b23fb77a0ffe8a
+Author: claude (dev163 38f9745c-aed1-4fb4-b6ae-9899f20f8de2) <noreply@anthropic.com>
+Date:   Fri Aug 7 11:22:34 2026 -0400
+
+    vm-config-dist: R-010 strict mode for the 2 standalone scripts
+
+    Files: usr/bin/{spice-vdagent.dist,vbox-guest-installer}.
+
+    Real nounset trap, on the installed-system path
+    ------------------------------------------------
+
+    vbox-guest-installer reads dist_build_virtualbox and output_command
+    UNCONDITIONALLY. Both are set by the IMAGE BUILD, so on an installed system
+    neither exists -- and under nounset the script aborted there, including on the
+    fail-closed path whose entire job is to report the value of the build variable.
+
+    Also
+    ----
+
+    - R-120: three 'rm' -> 'safe-rm', no fallback.
+    - style-ok: allow-exec on spice-vdagent.dist. It is a .dist wrapper whose job is
+      to set two environment variables and then BECOME the real spice-vdagent;
+      forking would leave a shell between the session and the agent, and the
+      agent's exit status and signals would stop being the real ones.
+    - R-090 'command -v' -> 'has'; R-034 echo -> printf.
+    - SC2046 fixed by quoting a substitution that yields exactly 'yes' or 'no'.
+    - SC2119/SC2120 waived on the kernel-selection block, which is vendored from
+      VirtualBox's own guest-additions tooling -- different indentation, uppercase
+      names, single-'#' comments. Rewriting vendored code is not this pass's
+      business. SC2317 file-wide, since nearly every function here is reached only
+      through the option dispatch.
+
+    Testing
+    -------
+
+    Gate exit 0 in an ISOLATED checkout.
+
+    New harness at ~/strict-pass-tests/vcd-test/. Seven cases.
+
+    The first version ran everything unprivileged and reported four vbox cases at
+    exit 112 -- the 'Must run as root' guard -- so the fail-closed decision this
+    package exists for was never reached at all. The harness now runs those cases
+    under sudo as well, which is what gets past that guard.
+
+      7 same, 0 differing
+
+    Canary: removing the two build-variable defaults reproduces the abort on
+    exactly the installed-system case -- 6 same, 1 differing. Note that it fires
+    ONLY on the root variant, which is the one the first harness could not reach.
+
+    NOTE: this repo carries uncommitted changes to etc/default/grub.d/
+    99_smbios-cmdline.cfg and etc/grub.d/01_smbios-reader from another session.
+    They are untouched, and this commit is path-scoped to usr/bin.
 
 commit f9862237457eabaeb7350bddbcf3faaf8c48b4b7
 Author: Aaron Rainbolt <arraybolt3@gmail.com>
