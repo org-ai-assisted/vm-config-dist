@@ -3,8 +3,25 @@
 ## Copyright (C) 2020 - 2025 ENCRYPTED SUPPORT LLC <adrelanos@kicksecure.com>
 ## See the file COPYING for copying conditions.
 
-if ! command -v spice-vdagent.dist-orig >/dev/null 2>/dev/null; then
-  echo 'Please install the spice-vdagent package to use this tool.'
+## style-ok: allow-exec -- this is a .dist wrapper whose entire job is to set
+## two environment variables and then BECOME the real spice-vdagent. Forking
+## would leave a shell between the session and the agent, and the agent's exit
+## status and signals would stop being the real ones.
+
+set -o errexit
+set -o nounset
+set -o pipefail
+set -o errtrace
+shopt -s inherit_errexit
+shopt -s shift_verbose
+export LC_ALL=C
+
+## sets: has
+# shellcheck source=../../../helper-scripts/usr/libexec/helper-scripts/has.sh
+source "${HELPER_SCRIPTS_PATH:-}"/usr/libexec/helper-scripts/has.sh
+
+if ! has spice-vdagent.dist-orig; then
+  printf '%s\n' 'Please install the spice-vdagent package to use this tool.'
   exit 1
 fi
 
