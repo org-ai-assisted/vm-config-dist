@@ -51,32 +51,20 @@ virtualbox_guest_additions_packages_still_installed() {
 }
 
 find_latest_installed_kernel() {
-  local kernel_list kernel_item kernel_version_list kernel_version \
-    kernel_arch system_arch
+  local kernel_item current_kver newest_kver=""
 
-  readarray -t kernel_list < <(find /boot -mindepth 1 -maxdepth 1 -type f -printf '%f\n' | grep '^vmlinuz-')
-  kernel_version_list=()
-  system_arch="$(dpkg --print-architecture)" || return 1
-
-  for kernel_item in "${kernel_list[@]}"; do
-    kernel_arch="${kernel_item##*-}"
-    if [ "${kernel_arch}" != "${system_arch}" ]; then
-      continue
+  for kernel_item in /boot/vmlinuz-*; do
+    [ -f "${kernel_item}" ] || continue
+    current_kver="${kernel_item##*/vmlinuz-}"
+    [[ "${current_kver}" == [0-9]* ]] || continue
+    ## Need kernel modules for a particular kernel to be useful.
+    [ -d "/usr/lib/modules/${current_kver}" ] || continue
+    if [ -z "${newest_kver}" ] || dpkg --compare-versions "${current_kver}" gt "${newest_kver}"; then
+      newest_kver="${current_kver}"
     fi
-
-    ## We more-or-less ignore the version suffix (i.e. +deb13). We considered
-    ## ignoring any kernels lacking a suffix that did not match the installed
-    ## Debian version, but this was rejected because the user may have custom
-    ## kernels installed. Those kernels may lack such a suffix, or have a
-    ## suffix that does not embed a Debian version in them. A user might also
-    ## have a legitimate reason to boot into a newer kernel from the backports
-    ## repo of a previous Debian release that they upgraded from.
-    kernel_version="${kernel_item#*-}"
-    kernel_version="${kernel_version%-*}"
-    kernel_version_list+=( "${kernel_version}" )
   done
 
-  printf '%s\n' "${kernel_version_list[@]}" | sort --reverse --version-sort | head -n1
+  printf '%s\n' "${newest_kver}"
 }
 
 error_handler() {
