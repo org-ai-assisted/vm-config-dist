@@ -15,3 +15,16 @@ ExecStart=/usr/bin/wlr-resize-watcher
 #NotifyAccess=all
 Restart=on-failure
 RestartSec=2s
+
+## W^X hardening (anonymous + file-backed). MemoryDenyWriteExecute denies anon
+## W+X and mprotect/shmat gaining PROT_EXEC; SystemCallArchitectures=native closes
+## the secondary-ABI (i386) bypass; LockPersonality blocks READ_IMPLIES_EXEC;
+## SystemCallFilter=~memfd_create kills the memfd bypass; NoExecPaths marks the
+## shared writable dirs non-executable (file-backed exec). wlr-resize-watcher is
+## CPython; pyudev uses ctypes CALLS into libudev (no CFUNCTYPE/PYFUNCTYPE
+## libffi closures), so no W+X -- confirm at the capstone GUI boot.
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+LockPersonality=true
+SystemCallFilter=~memfd_create
+NoExecPaths=/tmp /var/tmp /dev/shm
