@@ -339,7 +339,7 @@ https://www.whonix.org/wiki/resize
             )
             subprocess.run(
                 [
-                    "/usr/libexec/msgcollector/one-time-popup",
+                    "/usr/libexec/msgcollector/one-time-popup.py",
                     one_time_popup_status_file,
                     "wlr-resize-watcher",
                     not_resizing_display_message,
