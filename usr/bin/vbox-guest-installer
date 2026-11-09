@@ -57,8 +57,12 @@ find_latest_installed_kernel() {
     [ -f "${kernel_item}" ] || continue
     current_kver="${kernel_item##*/vmlinuz-}"
     [[ "${current_kver}" == [0-9]* ]] || continue
-    ## Need kernel modules for a particular kernel to be useful.
-    [ -d "/usr/lib/modules/${current_kver}" ] || continue
+    ## Need kernel modules AND headers (the 'build' dir): vboxadd setup_modules
+    ## only builds when /lib/modules/<release>/build exists, otherwise the guest
+    ## module build is silently skipped. Selecting a kernel without 'build' would
+    ## hide that; require it so a non-buildable-only system fails closed via the
+    ## empty-TARGET_VER guard below rather than shipping without guest modules.
+    [ -d "/usr/lib/modules/${current_kver}/build" ] || continue
     if [ -z "${newest_kver}" ] || dpkg --compare-versions "${current_kver}" gt "${newest_kver}"; then
       newest_kver="${current_kver}"
     fi
